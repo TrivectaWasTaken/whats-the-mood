@@ -6,7 +6,7 @@ import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers'
 import '../css/app.css'
 import { initializeTheme } from '@/composables/useAppearance';
 
-createInertiaApp({
+void createInertiaApp({
     resolve: (name) =>
         resolvePageComponent(
             `./pages/${name}.vue`,

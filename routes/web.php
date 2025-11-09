@@ -1,18 +1,34 @@
 <?php
 
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
-use Laravel\Fortify\Features;
-use App\Http\Controllers\WorkController;
-use App\Http\Controllers\SwipeController;
 
-Route::middleware(['auth', 'verified'])->group(function () {
-    Route::get('/', fn() => redirect()->route('works.index', 'book'));
+Route::middleware('guest')->group(function () {
+    Route::get('/login', fn () => Inertia::render('auth/Login'))->name('login');
 
-    Route::prefix('works/{type}')->whereIn('type', ['book','movie','game'])->group(function () {
-        Route::get('/', [WorkController::class, 'index'])->name('works.index');
-        Route::get('/wishlist', [WorkController::class, 'wishlist'])->name('works.wishlist');
-    });
+    Route::post('/login', function (Request $request) {
+        $credentials = $request->validate([
+            'email'    => ['required', 'email'],
+            'password' => ['required'],
+        ]);
 
-    Route::post('/swipes', [SwipeController::class, 'store'])->name('swipes.store');
+        $remember = (bool) $request->boolean('remember');
+
+        if (Auth::attempt($credentials, $remember)) {
+            $request->session()->regenerate();
+            return redirect()->intended(route('works.index', 'book'));
+        }
+
+        return back()->withErrors(['email' => 'Invalid credentials.'])->onlyInput('email');
+    })->name('login.store');
 });
+
+Route::post('/logout', function (Request $request) {
+    Auth::logout();
+    $request->session()->invalidate();
+    $request->session()->regenerateToken();
+    return redirect()->route('login');
+})->name('logout');
+
